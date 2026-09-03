@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Content</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 pb-16">
+    <nav class="h-16 bg-white border-b flex items-center px-4 sticky top-0 z-20">
+        <button onclick="history.back()" class="text-gray-600 font-bold text-sm">← Back</button>
+        <h1 class="ml-4 font-bold text-gray-800">Content</h1>
+    </nav>
+    <div id="tabsContainer" class="flex gap-2 p-4 overflow-x-auto bg-white">
+        <button onclick="changeTab('Videos', this)" class="tab-btn px-4 py-2 rounded-full bg-indigo-600 text-white text-sm font-bold">Lectures</button>
+        <button onclick="changeTab('Notes', this)" class="tab-btn px-4 py-2 rounded-full bg-white border text-sm font-bold">Notes</button>
+        <button onclick="changeTab('DPP', this)" class="tab-btn px-4 py-2 rounded-full bg-white border text-sm font-bold">DPP</button>
+    </div>
+    <div id="contentContainer" class="p-4"></div>
+    <div id="loadMoreContainer" class="p-4 text-center hidden">
+        <button id="loadMoreBtn" onclick="loadMore()" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-full font-bold text-sm">Load More</button>
+    </div>
+    <div id="playerModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white p-6 rounded-xl w-80 shadow-xl space-y-2">
+            <h2 class="text-lg font-bold mb-4">Select Player</h2>
+            <button id="p1Btn" class="w-full bg-blue-600 text-white py-2 rounded-lg font-bold">Player 1</button>
+            <button id="p2Btn" class="w-full bg-indigo-600 text-white py-2 rounded-lg font-bold">Player 2</button>
+            <button onclick="document.getElementById('playerModal').classList.add('hidden')" class="w-full mt-4 text-gray-500 text-sm">Cancel</button>
+        </div>
+    </div>
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const bId = params.get("batchId"), sId = params.get("subjectId"), tId = params.get("topicId");
+        let currentTab = 'Videos', currentPage = 1;
+
+        function cleanTitle(title) {
+            return title.split('||')[0].replace(/Class Notes|Concise Summary Notes|NCERT Discussion Notes|Handwritten Notes/gi, '').trim();
+        }
+
+        async function fetchContent(page) {
+            const url = `https://devcoderz-backend.vercel.app/api/config?batchId=${bId}&subjectId=${sId}&page=${page}&contentType=${currentTab}&tag=${tId}`;
+            const res = await fetch(url);
+            const json = await res.json();
+            if (json.encryptedData) {
+                const decodedString = decodeURIComponent(escape(atob(json.encryptedData)));
+                return JSON.parse(decodedString);
+            }
+            return json;
+        }
+
+        async function loadContent(isLoadMore = false) {
+            if (!isLoadMore) currentPage = 1;
+            const container = document.getElementById('contentContainer');
+            if (!isLoadMore) container.innerHTML = '<div class="text-center mt-10">Loading...</div>';
+
+            try {
+                const json = await fetchContent(currentPage);
+                const items = json.data || [];
+                if (!isLoadMore) container.innerHTML = '';
+
+                items.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = "bg-white p-4 mb-3 rounded-xl border flex items-center justify-between";
+                    if (currentTab === 'Videos') {
+                        const lId = item.lectureId || item._id;
+                        const rawVideoUrl = item.url || (item.videoDetails && item.videoDetails.videoUrl) || '';
+                        const topicName = item.topic || (item.videoDetails && item.videoDetails.name) || 'Untitled';
+                        const videoImg = (item.videoDetails && item.videoDetails.image) || '';
+                        const lectureType = item.lectureType || 'Lecture';
+                        const typeId = item.videoDetails?.id || item.videoDetails?._id || item._id;
+
+                        div.innerHTML = `<div class="flex-1"><h3 class="font-bold text-sm text-gray-800">${topicName}</h3></div>
+                                        <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold" onclick="openPlayerModal('${bId}', '${sId}', '${tId}', '${lId}', '${typeId}', '${encodeURIComponent(rawVideoUrl)}', '${encodeURIComponent(topicName)}', '${encodeURIComponent(videoImg)}', '${lectureType}')">Watch</button>`;
+                    } else {
+                        const hw = (item.homeworkIds || [])[0];
+                        const fileUrl = hw && hw.attachmentIds && hw.attachmentIds.length > 0 ? (hw.attachmentIds[0].baseUrl + hw.attachmentIds[0].key) : '#';
+                        const title = hw ? cleanTitle(hw.topic || 'Untitled Note') : 'Untitled Note';
+                        div.innerHTML = `<div class="flex-1"><h3 class="font-bold text-sm text-gray-800">${title}</h3></div>
+                                        <button class="bg-white text-indigo-600 border border-indigo-600 px-4 py-2 rounded-lg text-sm font-bold" onclick="window.open('${fileUrl}', '_blank')">View</button>`;
+                    }
+                    container.appendChild(div);
+                });
+                document.getElementById('loadMoreContainer').classList.toggle('hidden', items.length < 20);
+            } catch (e) { container.innerHTML = '<div class="text-center mt-10 text-red-500">Error loading data</div>'; }
+        }
+
+        function loadMore() { currentPage++; loadContent(true); }
+
+        function changeTab(tab, btn) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                b.classList.remove('bg-indigo-600', 'text-white');
+                b.classList.add('bg-white', 'border');
+            });
+            btn.classList.add('bg-indigo-600', 'text-white');
+            btn.classList.remove('bg-white', 'border');
+            loadContent();
+        }
+
+        function openPlayerModal(batchId, subjectId, topicId, lectureId, typeId, videoUrl, videoName, videoImg, lectureType) {
+            document.getElementById('playerModal').classList.remove('hidden');
+
+            const query2 = `?batchId=${batchId}&subjectId=${subjectId}&topicId=${topicId}&lectureId=${lectureId}&typeId=${typeId}&videoUrl=${videoUrl}&videoName=${videoName}&videoImg=${videoImg}&playType=Lecture&video_type=new`;
+
+            document.getElementById('p1Btn').onclick = () => window.location.href = 'player2.html' + query2;
+            document.getElementById('p2Btn').onclick = () => window.location.href = 'player3.html' + query2;
+        }
+
+        loadContent();
+    </script>
+</body>
+</html>
