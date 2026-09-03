@@ -1,0 +1,10 @@
+const { Server } = require('socket.io');
+
+function initSocket(server){
+  const io = new Server(server);
+  io.on('connection', socket => {
+    socket.on('join', room => socket.join(room));
+  });
+}
+
+module.exports = { initSocket };
