@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/api/ebooks", "destination": "/api/ebooks" },
+    { "source": "/api/chapters/:id", "destination": "/api/chapters" }
+  ]
+}

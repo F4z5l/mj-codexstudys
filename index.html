@@ -1,0 +1,535 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Pinnacle eBooks</title>
+  <style>
+    :root{
+      --bg:#0b1220; --card:#0f1b33; --muted:#9fb0d0; --text:#eaf0ff;
+      --border:rgba(255,255,255,.08); --shadow:0 20px 50px rgba(0,0,0,.35);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; color:var(--text);
+      background:
+        radial-gradient(1100px 700px at 20% 10%, rgba(90,140,255,.18), transparent 60%),
+        radial-gradient(900px 600px at 90% 20%, rgba(0,255,200,.12), transparent 60%),
+        var(--bg);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    }
+    header{
+      position:sticky; top:0; z-index:20;
+      backdrop-filter: blur(12px);
+      background: rgba(11,18,32,.68);
+      border-bottom:1px solid var(--border);
+    }
+    .wrap{max-width:1150px; margin:0 auto; padding:18px 16px;}
+    .topbar{display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap;}
+    .brand{display:flex; align-items:center; gap:10px;}
+    .logo{
+      width:42px;height:42px;border-radius:14px;
+      background: linear-gradient(135deg, rgba(90,140,255,1), rgba(0,255,200,1));
+      box-shadow: 0 10px 30px rgba(90,140,255,.25);
+    }
+    h1{font-size:18px; margin:0;}
+    .sub{font-size:12px; color:var(--muted); margin-top:2px}
+    .controls{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+    .input{
+      width:min(520px, 80vw);
+      padding:11px 12px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.04);
+      color: var(--text);
+      outline:none;
+    }
+    .btn{
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.05);
+      color: var(--text);
+      padding:10px 12px;
+      border-radius:12px;
+      cursor:pointer;
+      transition: .15s ease;
+      display:inline-flex; align-items:center; gap:8px;
+      user-select:none;
+    }
+    .btn:hover{transform: translateY(-1px); background: rgba(255,255,255,.08);}
+    .btn:active{transform: translateY(0px);}
+    .btn.primary{
+      background: linear-gradient(135deg, rgba(90,140,255,.9), rgba(0,255,200,.85));
+      border-color: transparent;
+      color:#061021;
+      font-weight: 650;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns: repeat( auto-fit, minmax(230px, 1fr) );
+      gap:14px;
+      padding: 18px 16px 30px;
+      max-width:1150px; margin:0 auto;
+    }
+    .card{
+      background: rgba(15,27,51,.9);
+      border:1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+      min-height: 335px;
+    }
+    .thumb{
+      height: 185px;
+      background: rgba(255,255,255,.03);
+      display:flex; align-items:center; justify-content:center;
+      position:relative;
+      border-bottom:1px solid var(--border);
+    }
+    .thumb img{
+      width:100%; height:100%;
+      object-fit: cover;
+      display:block;
+    }
+    .badge{
+      position:absolute; left:10px; top:10px;
+      background: rgba(0,0,0,.45);
+      border:1px solid rgba(255,255,255,.14);
+      padding:6px 8px;
+      border-radius:999px;
+      font-size:12px;
+      color: rgba(255,255,255,.9);
+      backdrop-filter: blur(10px);
+    }
+    .body{padding:12px 12px 14px; display:flex; flex-direction:column; gap:10px; flex:1;}
+    .title{
+      font-size:14px; line-height:1.35;
+      font-weight:700;
+      display:-webkit-box;
+      -webkit-line-clamp:3;
+      -webkit-box-orient: vertical;
+      overflow:hidden;
+    }
+    .meta{display:flex; gap:8px; flex-wrap:wrap; color:var(--muted); font-size:12px;}
+    .pill{
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.04);
+      padding:6px 8px;
+      border-radius:999px;
+    }
+    .actions{margin-top:auto; display:flex; gap:10px;}
+    .actions .btn{flex:1; justify-content:center;}
+
+    .state{
+      max-width:1150px; margin: 10px auto 0; padding: 0 16px;
+      color: var(--muted);
+      display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    }
+    .spinner{
+      width:16px;height:16px;border-radius:50%;
+      border:2px solid rgba(255,255,255,.25);
+      border-top-color: rgba(255,255,255,.85);
+      animation: spin 0.8s linear infinite;
+      display:inline-block;
+    }
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* Modal */
+    .modalBack{
+      position:fixed; inset:0; z-index:50;
+      background: rgba(0,0,0,.55);
+      display:none;
+      align-items:center; justify-content:center;
+      padding: 18px;
+    }
+    .modal{
+      width:min(760px, 96vw);
+      max-height: min(80vh, 680px);
+      overflow:hidden;
+      border-radius: 20px;
+      border:1px solid var(--border);
+      background: rgba(15,27,51,.96);
+      box-shadow: 0 30px 90px rgba(0,0,0,.55);
+      backdrop-filter: blur(16px);
+      display:flex; flex-direction:column;
+    }
+    .modalHead{
+      padding: 14px 14px 10px;
+      border-bottom:1px solid var(--border);
+      display:flex; align-items:flex-start; justify-content:space-between; gap:10px;
+    }
+    .modalHead .left{display:flex; flex-direction:column; gap:6px}
+    .modalTitle{margin:0; font-size:14px; font-weight:800}
+    .modalSub{font-size:12px; color:var(--muted)}
+    .modalBody{
+      padding: 10px 14px 14px;
+      overflow:auto;
+    }
+    .chapList{display:flex; flex-direction:column; gap:8px;}
+    .chap{
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.04);
+      padding: 10px 10px;
+      border-radius: 14px;
+      display:flex; gap:10px; align-items:center; justify-content:space-between;
+      cursor:pointer;
+      transition: .12s ease;
+    }
+    .chap:hover{background: rgba(255,255,255,.07); transform: translateY(-1px);}
+    .chapLeft{display:flex; gap:10px; align-items:center; min-width:0;}
+    .seq{
+      width:30px;height:30px;border-radius:10px;
+      display:flex; align-items:center; justify-content:center;
+      background: rgba(90,140,255,.2);
+      border:1px solid rgba(90,140,255,.35);
+      color: rgba(255,255,255,.9);
+      font-size:12px; font-weight:800;
+      flex:0 0 auto;
+    }
+    .chapTitle{
+      font-size:13px; font-weight:700;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+      max-width: 520px;
+    }
+    .openTag{font-size:12px; color:var(--muted); border:1px solid var(--border); padding:6px 8px; border-radius:999px;}
+    .toast{
+      position: fixed; left: 50%; transform: translateX(-50%);
+      bottom: 14px; z-index:80;
+      background: rgba(10,16,30,.85);
+      border:1px solid rgba(255,255,255,.12);
+      padding: 10px 12px;
+      border-radius: 14px;
+      color: rgba(255,255,255,.92);
+      font-size: 13px;
+      display:none;
+      backdrop-filter: blur(14px);
+      box-shadow: 0 20px 60px rgba(0,0,0,.5);
+    }
+    footer{max-width:1150px; margin: 0 auto; padding: 18px 16px 28px; color: var(--muted); font-size:12px;}
+    .hint{opacity:.9}
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo"></div>
+        <div>
+          <h1>Pinnacle eBooks</h1>
+          <div class="sub">Photo + caption + Download + Subject (Chapters)</div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <input id="q" class="input" placeholder="Search title / subject / medium / category..." />
+        <button id="reload" class="btn primary">↻ Reload</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="state wrap">
+  <div id="statusText">Loading ebooks…</div>
+  <div id="statusRight"></div>
+</div>
+
+<main class="grid" id="grid"></main>
+
+<footer>
+  <div class="hint">
+    ⚠️ Note: Download link sometimes slow — website shows a warning before opening download.
+  </div>
+</footer>
+
+<!-- Modal -->
+<div class="modalBack" id="modalBack">
+  <div class="modal">
+    <div class="modalHead">
+      <div class="left">
+        <p class="modalTitle" id="modalTitle">Subjects</p>
+        <div class="modalSub" id="modalSub">Loading…</div>
+      </div>
+      <button class="btn" id="closeModal">✕ Close</button>
+    </div>
+    <div class="modalBody">
+      <div id="modalLoading" style="display:flex;gap:10px;align-items:center;color:var(--muted);">
+        <span class="spinner"></span> Fetching chapters…
+      </div>
+      <div class="chapList" id="chapList"></div>
+      <div id="modalError" style="display:none;color:#ffb4b4;margin-top:10px;"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ✅ Proxy endpoints (Vercel functions)
+  const API_EBOOKS = "/api/ebooks";
+  const API_CHAPTERS = (bookId) => `/api/chapters/${encodeURIComponent(bookId)}`;
+
+  // ✅ External open links
+  const DOWNLOAD_BASE = "https://pncallcontent-ten.vercel.app/fullbook/"; // + {book_id}
+  const CHAPTER_OPEN_BASE = "https://pincbookcontent.vercel.app/ebook/";     // + {sub_id}
+
+  const grid = document.getElementById("grid");
+  const q = document.getElementById("q");
+  const reloadBtn = document.getElementById("reload");
+  const statusText = document.getElementById("statusText");
+  const statusRight = document.getElementById("statusRight");
+
+  const modalBack = document.getElementById("modalBack");
+  const closeModal = document.getElementById("closeModal");
+  const chapList = document.getElementById("chapList");
+  const modalTitle = document.getElementById("modalTitle");
+  const modalSub = document.getElementById("modalSub");
+  const modalLoading = document.getElementById("modalLoading");
+  const modalError = document.getElementById("modalError");
+
+  const toast = document.getElementById("toast");
+
+  let allBooks = [];
+
+  function showToast(msg){
+    toast.textContent = msg;
+    toast.style.display = "block";
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(()=> toast.style.display="none", 2200);
+  }
+
+  function setStatus(left, rightHtml=""){
+    statusText.textContent = left;
+    statusRight.innerHTML = rightHtml;
+  }
+
+  function safeText(v){
+    return (v === null || v === undefined) ? "" : String(v);
+  }
+
+  function makeCard(book){
+    const id = book?._id; // ✅ BOOK_ID
+    const title = safeText(book?.title);
+    const img = safeText(book?.image);
+    const medium = safeText(book?.medium);
+    const subject = safeText(book?.subject);
+    const category = safeText(book?.category);
+
+    const card = document.createElement("div");
+    card.className = "card";
+
+    const thumb = document.createElement("div");
+    thumb.className = "thumb";
+
+    const badge = document.createElement("div");
+    badge.className = "badge";
+    badge.textContent = subject ? subject : (category || "eBook");
+    thumb.appendChild(badge);
+
+    const image = document.createElement("img");
+    image.loading = "lazy";
+    image.alt = title || "ebook";
+    image.src = img || "";
+    image.onerror = () => {
+      image.style.display = "none";
+      thumb.style.justifyContent = "center";
+      thumb.style.color = "var(--muted)";
+      thumb.textContent = "No Image";
+      thumb.appendChild(badge);
+    };
+    thumb.appendChild(image);
+
+    const body = document.createElement("div");
+    body.className = "body";
+
+    const t = document.createElement("div");
+    t.className = "title";
+    t.textContent = title || "(Untitled)";
+    body.appendChild(t);
+
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    if (category) meta.innerHTML += `<span class="pill">${category}</span>`;
+    if (medium) meta.innerHTML += `<span class="pill">${medium}</span>`;
+    if (id) meta.innerHTML += `<span class="pill">ID: ${id.slice(0,6)}…</span>`;
+    body.appendChild(meta);
+
+    const actions = document.createElement("div");
+    actions.className = "actions";
+
+    // ✅ Download uses BOOK_ID
+    const btnDownload = document.createElement("button");
+    btnDownload.className = "btn primary";
+    btnDownload.textContent = "⬇ Download";
+    btnDownload.onclick = () => {
+      if (!id) return showToast("Book ID missing!");
+      const ok = confirm("⚠️ Download kabhi kabhi late hota hai.\nOpen download link anyway?");
+      if (!ok) return;
+      window.open(DOWNLOAD_BASE + encodeURIComponent(id), "_blank", "noopener,noreferrer");
+    };
+
+    // ✅ Subjects list uses BOOK_ID (via proxy)
+    const btnSubjects = document.createElement("button");
+    btnSubjects.className = "btn";
+    btnSubjects.textContent = "📚 Subject";
+    btnSubjects.onclick = () => {
+      if (!id) return showToast("Book ID missing!");
+      openSubjectsModal(book); // ✅ passes BOOK object
+    };
+
+    actions.appendChild(btnDownload);
+    actions.appendChild(btnSubjects);
+    body.appendChild(actions);
+
+    card.appendChild(thumb);
+    card.appendChild(body);
+    return card;
+  }
+
+  function renderBooks(list){
+    grid.innerHTML = "";
+    if (!list.length){
+      grid.innerHTML = `<div style="color:var(--muted);padding:10px 6px;">No books found.</div>`;
+      return;
+    }
+    const frag = document.createDocumentFragment();
+    for (const b of list) frag.appendChild(makeCard(b));
+    grid.appendChild(frag);
+  }
+
+  function applyFilter(){
+    const term = q.value.trim().toLowerCase();
+    if (!term){
+      renderBooks(allBooks);
+      setStatus(`Showing ${allBooks.length} ebooks`, "");
+      return;
+    }
+    const filtered = allBooks.filter(b => {
+      const hay = [
+        b?.title, b?.subject, b?.medium, b?.category, b?.author, b?.edition, b?.search
+      ].map(x => safeText(x).toLowerCase()).join(" | ");
+      return hay.includes(term);
+    });
+    renderBooks(filtered);
+    setStatus(`Showing ${filtered.length} / ${allBooks.length} ebooks`, "");
+  }
+
+  async function loadBooks(){
+    setStatus("Loading ebooks…", `<span class="spinner"></span>`);
+    grid.innerHTML = "";
+    try{
+      const res = await fetch(API_EBOOKS, { method:"GET" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (!Array.isArray(data)) throw new Error("Unexpected response (not array)");
+      allBooks = data.filter(x => x && x.active !== false);
+      renderBooks(allBooks);
+      setStatus(`Loaded ${allBooks.length} ebooks`, "");
+      applyFilter();
+    }catch(err){
+      console.error(err);
+      setStatus("Failed to load ebooks", "");
+      grid.innerHTML = `
+        <div style="color:#ffb4b4;padding:10px 6px;">
+          ❌ Error loading ebooks. <br/>
+          <span style="color:var(--muted)">Reason: ${safeText(err?.message || err)}</span><br/><br/>
+          <span style="color:var(--muted)">Fix: Ensure Vercel api/ebooks.js exists and /api/ebooks works.</span>
+        </div>
+      `;
+    }
+  }
+
+  function openModal(){
+    modalBack.style.display = "flex";
+    document.body.style.overflow = "hidden";
+  }
+  function closeModalFn(){
+    modalBack.style.display = "none";
+    document.body.style.overflow = "auto";
+  }
+
+  // ✅ This loads chapters list using BOOK_ID via proxy
+  async function openSubjectsModal(book){
+    const bookId = book?._id; // ✅ BOOK_ID
+    modalTitle.textContent = book?.title ? `Subjects: ${book.title}` : "Subjects";
+    modalSub.textContent = `Book ID: ${bookId}`;
+    chapList.innerHTML = "";
+    modalError.style.display = "none";
+    modalLoading.style.display = "flex";
+    openModal();
+
+    try{
+      const res = await fetch(API_CHAPTERS(bookId), { method:"GET" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const chapters = await res.json();
+      if (!Array.isArray(chapters)) throw new Error("Unexpected chapters response (not array)");
+
+      chapters.sort((a,b)=> (a?.sequence ?? 999999) - (b?.sequence ?? 999999));
+
+      modalLoading.style.display = "none";
+      if (!chapters.length){
+        chapList.innerHTML = `<div style="color:var(--muted);padding:8px 2px;">No subjects found.</div>`;
+        return;
+      }
+
+      const frag = document.createDocumentFragment();
+      for (const ch of chapters){
+        const row = document.createElement("div");
+        row.className = "chap";
+        row.title = "Open subject link";
+
+        const left = document.createElement("div");
+        left.className = "chapLeft";
+
+        const seq = document.createElement("div");
+        seq.className = "seq";
+        seq.textContent = safeText(ch?.sequence ?? "");
+
+        const name = document.createElement("div");
+        name.className = "chapTitle";
+        name.textContent = safeText(ch?.title || "Untitled");
+
+        left.appendChild(seq);
+        left.appendChild(name);
+
+        const openTag = document.createElement("div");
+        openTag.className = "openTag";
+        openTag.textContent = "Open ↗";
+
+        row.appendChild(left);
+        row.appendChild(openTag);
+
+        // ✅ Clicking subject opens: https://pincbookcontent.vercel.app/ebook/{sub_id}
+        row.onclick = () => {
+          const subjectId = ch?._id; // ✅ SUB_ID
+          if (!subjectId) return showToast("Subject ID missing!");
+          window.open(CHAPTER_OPEN_BASE + encodeURIComponent(subjectId), "_blank", "noopener,noreferrer");
+        };
+
+        frag.appendChild(row);
+      }
+      chapList.appendChild(frag);
+
+    }catch(err){
+      console.error(err);
+      modalLoading.style.display = "none";
+      modalError.style.display = "block";
+      modalError.textContent = `❌ Failed to load subjects: ${safeText(err?.message || err)}`;
+    }
+  }
+
+  // events
+  q.addEventListener("input", applyFilter);
+  reloadBtn.addEventListener("click", loadBooks);
+  closeModal.addEventListener("click", closeModalFn);
+  modalBack.addEventListener("click", (e)=> { if (e.target === modalBack) closeModalFn(); });
+
+  // init
+  loadBooks();
+</script>
+
+</body>
+</html>
